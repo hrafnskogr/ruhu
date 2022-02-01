@@ -52,6 +52,32 @@ extern "system"
 				       RegisterNames: *const WHvRegisterName,
 				       RegisterCount: u32,
 				       RegisterValues: *mut WHvRegisterValue) -> HResult;
+
+    fn WHvGetVirtualProcessorXsaveState(Partition: PHandle,
+                                        VpIndex: u32,
+                                        Buffer: *mut usize,
+                                        BufferSizeInBytes: u32,
+                                        BytesWritten: *mut u32);
+
+    fn WHvMapGpaRange(Partition: PHandle,
+                      SourceAddress:    *const usize,
+                      GuestAddress:     WHvGuestPhysicialAddress,
+                      SizeInBytes:      u64,
+                      Flags:            WHvMapGpaRangeFlags) -> HResult;
+
+    fn WHvQueryGpaRangeDirtyBitmap(Partition: PHandle,
+                                   GuestAddress: WHvGuestPhysicialAddress,
+                                   RangeSizeInBytes: u64,
+                                   Bitmap: *mut u64,
+                                   BitmapSizeInBytes: u32) -> HResult;
+
+    fn WHvRequestInterrupt(Partition: PHandle,
+                           Interrupt: *const usize,                 // pointer to WHvInterruptControl structure
+                           InterruptControlSize: u32) -> HResult;
+
+    fn WHvResumePartitionTime(Partition: PHandle) -> HResult;
+
+    
     
 
 }

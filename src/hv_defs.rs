@@ -5,13 +5,18 @@
  *
  */
 
+#![allow(non_snake_case)]
+
+
 use bitf::bitf;
+
 
 pub type PHandle = usize;
 pub type HResult = u32;     // maybe should be an i32 ?
 
+pub type WHvGuestPhysicialAddress = u64;
+pub type WHvGuestVirtualAddress = u64;
 
-bits!(WHvProcessorVendor, u64, [rax:8.1,rbx:8.8,rcx:8.16]);
 
 #[repr(C)]
 pub enum WHvCapabilityCode
@@ -32,6 +37,7 @@ pub enum WHvCapabilityCode
 // Return values for WHvCapabilityCodeProcessorVendor
 //
 #[repr(C)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum WHvProcessorVendor
 {
     AMD   = 0x0000,
@@ -44,7 +50,7 @@ pub enum WHvProcessorVendor
 //
 #[bitf(u64, pp)]
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct WHvCapabilityFeatures
 {
     PartialUnmap_1:       (),
@@ -52,7 +58,7 @@ pub struct WHvCapabilityFeatures
     Xsave_1:              (),
     DirtyPageTracking_1:  (),
     SpeculationControl_1: (),
-    _reserved_59_1:       (),           
+    _reserved_59:         (),           
 }
 
 //
@@ -60,7 +66,7 @@ pub struct WHvCapabilityFeatures
 //
 #[bitf(u64, pp)]
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct WHvExtendedVmExits
 {
     X64CpuidExit_1:   (),			// RunVpExitReasonX64CPUID supported
@@ -74,90 +80,50 @@ pub struct WHvExtendedVmExits
 //
 #[bitf(u64, pp)]
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct WHvProcessorFeatures
 {
-	// CPUID.01H:ECX.SSE3[bit 0] = 1
 	Sse3Support_1: 				        (),
-	// CPUID.80000001H:ECX.LAHF-SAHF[bit 0] = 1
 	LahfSahfSupport_1: 			        (),
-	// CPUID.01H:ECX.SSSE3[bit 9] = 1
 	Ssse3Support_1: 				(),
-	// CPUID.01H:ECX.SSE4_1[bit 19] = 1
 	Sse4_1Support_1: 				(),
-	// CPUID.01H:ECX.SSE4_2[bit 20] = 1
 	Sse4_2Support_1: 				(),
-	// CPUID.80000001H:ECX.SSE4A[bit 6]
 	Sse4aSupport_1: 				(),
-	// CPUID.80000001H:ECX.XOP[bit 11]
 	XopSupport_1: 				        (),
-	// CPUID.01H:ECX.POPCNT[bit 23] = 1
 	PopCntSupport_1: 				(),
-	// CPUID.01H:ECX.CMPXCHG16B[bit 13] = 1
 	Cmpxchg16bSupport_1: 			        (),
-	// CPUID.80000001H:ECX.AltMovCr8[bit 4]
 	Altmovcr8Support_1: 			        (),
-	// CPUID.80000001H:ECX.LZCNT[bit 5] = 1
 	LzcntSupport_1: 				(),
-	// CPUID.80000001H:ECX.MisAlignSse[bit 7]
 	MisAlignSseSupport_1: 		                (),
-	// CPUID.80000001H:EDX.MmxExt[bit 22]
 	MmxExtSupport_1: 				(),
-	// CPUID.80000001H:EDX.3DNow[bit 31]
 	Amd3DNowSupport_1: 			        (),
-	// CPUID.80000001H:EDX.3DNowExt[bit 30]
 	ExtendedAmd3DNowSupport_1:            	        (),
-	// CPUID.80000001H:EDX.Page1GB[bit 26] = 1
 	Page1GbSupport_1: 			        (),
-	// CPUID.01H:ECX.AES[bit 25]
 	AesSupport_1: 				        (),
-	/* CPUID.01H:ECX.PCLMULQDQ[bit 1] = 1 */
 	PclmulqdqSupport_1: 		        	(),
-	/* CPUID.01H:ECX.PCID[bit 17] */
 	PcidSupport_1: 				        (),
-	/* CPUID.80000001H:ECX.FMA4[bit 16] = 1 */
 	Fma4Support_1: 				        (),
-	/* CPUID.01H:ECX.F16C[bit 29] = 1 */
 	F16CSupport_1: 				        (),
-	/* CPUID.01H:ECX.RDRAND[bit 30] = 1 */
 	RdRandSupport_1: 				(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.FSGSBASE[bit 0] */
 	RdWrFsGsSupport_1: 		        	(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.SMEP[bit 7] */
 	SmepSupport_1: 				        (),
-	/* IA32_MISC_ENABLE.FastStringsEnable[bit 0] = 1 */
 	EnhancedFastStringSupport_1:          	        (),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.BMI1[bit 3] = 1 */
 	Bmi1Support_1: 				        (),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.BMI2[bit 8] = 1 */
 	Bmi2Support_1: 				        (),
 	_reserved_2: 					(),
-	/* CPUID.01H:ECX.MOVBE[bit 22] = 1 */
 	MovbeSupport_1 : 				(),
 	_reserved_1: 					(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX[bit 13] = 1 */
 	DepX87FPUSaveSupport_1: 	        	(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.RDSEED[bit 18] = 1 */
 	RdSeedSupport_1: 				(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.ADX[bit 19] */
 	AdxSupport_1: 				        (),
-	/* CPUID.80000001H:ECX.PREFETCHW[bit 8] = 1 */
 	IntelPrefetchSupport_1: 	        	(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.SMAP[bit 20] = 1 */
 	SmapSupport_1: 				        (),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.HLE[bit 4] = 1 */
 	HleSupport_1: 				        (),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.RTM[bit 11] = 1 */
 	RtmSupport_1: 				        (),
-	/* CPUID.80000001H:EDX.RDTSCP[bit 27] = 1 */
 	RdtscpSupport_1: 				(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.CLFLUSHOPT[bit 23] */
 	ClflushoptSupport_1: 		        	(),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.CLWB[bit 24] = 1 */
 	ClwbSupport_1: 			    	        (),
-	/* CPUID.(EAX=07H, ECX=0H):EBX.SHA[bit 29] */
 	ShaSupport_1: 				        (),
-	/* CPUID.80000008H:EBX[bit 2] = 1 (AMD only) */
 	X87PointersSavedSupport_1:            	        (),
 	InvpcidSupport_1: 		        	(),
 	IbrsSupport_1: 				        (),
@@ -175,44 +141,46 @@ pub struct WHvProcessorFeatures
 	_reserved_8: 					(),
 }
 
+#[bitf(u64, pp)]
 #[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WHvProcessorXsaveFeatures
 {
-	pub XsaveSupport: 			u8,
-	pub XsaveoptSupport: 		u8,
-	pub AvxSupport: 			u8,
-	pub Avx2Support: 			u8,
-	pub FmaSupport: 			u8,
-	pub MpxSupport: 			u8,
-	pub Avx512Support:	 		u8,
-	pub Avx512DQSupport: 		u8,
-	pub Avx512CDSupport: 		u8,
-	pub Avx512BWSupport: 		u8,
-	pub Avx512VLSupport: 		u8,
-	pub XsaveCompSupport: 		u8,
-	pub XsaveSupervisorSupport: u8,
-	pub Xcr1Support: 			u8,
-	pub Avx512BitalgSupport: 	u8,
-	pub Avx512IfmaSupport:	 	u8,
-	pub Avx512VBmiSupport: 		u8,
-	pub Avx512VBmi2Support: 	u8,
-	pub Avx512VnniSupport: 		u8,
-	pub GfniSupport: 			u8,
-	pub VaesSupport: 			u8,
-	pub Avx512VPopcntdqSupport: u8,
-	pub VpclmulqdqSupport: 		u8,
-	pub Reserved: 			 	[4;u8],	
-
-
+	XsaveSupport_1: 		(),
+	XsaveoptSupport_1: 		(),
+	AvxSupport_1: 			(),
+	Avx2Support_1: 			(),
+	FmaSupport_1: 			(),
+	MpxSupport_1: 			(),
+	Avx512Support_1:	 	(),
+	Avx512DQSupport_1: 		(),
+	Avx512CDSupport_1: 		(),
+	Avx512BWSupport_1: 		(),
+	Avx512VLSupport_1: 		(),
+	XsaveCompSupport_1: 		(),
+	XsaveSupervisorSupport_1:       (),
+	Xcr1Support_1: 			(),
+	Avx512BitalgSupport_1: 	        (),
+	Avx512IfmaSupport_1:	 	(),
+	Avx512VBmiSupport_1: 		(),
+	Avx512VBmi2Support_1: 	        (),
+	Avx512VnniSupport_1: 		(),
+	GfniSupport_1: 			(),
+	VaesSupport_1: 			(),
+	Avx512VPopcntdqSupport_1:       (),
+	VpclmulqdqSupport_1: 		(),
+	_reserved_4: 			(),	
 }
 
 //
 // WHvGetCapability Output buffer
 //
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub union WHvCapability
 {
 	pub HypervisorPresent: 		bool,
-	pub Features: 				WHvCapabilityFeatures,
+	pub Features: 			WHvCapabilityFeatures,
 	pub ExtendedVmExits: 		WHvExtendedVmExits,
 	pub ProcessorVendor:		WHvProcessorVendor,
 	pub ProcessorFeatures:		WHvProcessorFeatures,
@@ -222,16 +190,17 @@ pub union WHvCapability
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub enum WHvPartitionCounterSet
 {
 	Memory,
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct WHvPartitionMemoryCounters
 {
-	pub Mapped4KPageCount: u64,
+    pub Mapped4KPageCount: u64,
     pub Mapped2MPageCount: u64,
     pub Mapped1GPageCount: u64,
 }
@@ -242,106 +211,107 @@ pub struct WHvPartitionMemoryCounters
  *
  */
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum WHvPartitionPropertyCode
 {
-	ExtendedVmExits 		= 0x00000001,
+	ExtendedVmExits 	= 0x00000001,
 	ExceptionExitBitmap 	= 0x00000002,
 	SeparateSecurityDomain	= 0x00000003,
-	ProcessorFeatures		= 0x00001001,
+	ProcessorFeatures	= 0x00001001,
 	ProcessorClFlushSize	= 0x00001002,
-	CpuidExitList			= 0x00001003,
-	CpuidResultList			= 0x00001004,
+	CpuidExitList		= 0x00001003,
+	CpuidResultList		= 0x00001004,
 	LocalApicEmulationMode  = 0x00001005,
 	ProcessorXsaveFeatures  = 0x00001006,
-	ProcessorCount			= 0x00001fff,
+	ProcessorCount		= 0x00001fff,
 }
 
 //
 // WHvPartitionPropertyCodeCpuidResultList input buffer list element.
 //
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct WHvX64CpuidResult
 {
     Function:	u32,
     Reserved:	[u32;3],
-   	Eax: 		u32,
-    Ebx: 		u32,
-    Ecx: 		u32,
-    Edx: 		u32,
+    Eax: 	u32,
+    Ebx: 	u32,
+    Ecx: 	u32,
+    Edx: 	u32,
 }
  
 //
 // WHvPartitionPropertyCodeExceptionBitmap enumeration values.
 //
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 // pub enum WHvExceptionType
 pub enum WHvX64ExceptionType
 {
-    DivideErrorFault 				= 0x0,
-    DebugTrapOrFault 				= 0x1,
-    BreakpointTrap 					= 0x3,
-    OverflowTrap 					= 0x4,
-    BoundRangeFault 				= 0x5,
-    InvalidOpcodeFault 				= 0x6,
+    DivideErrorFault 			= 0x0,
+    DebugTrapOrFault 			= 0x1,
+    BreakpointTrap 			= 0x3,
+    OverflowTrap 			= 0x4,
+    BoundRangeFault 			= 0x5,
+    InvalidOpcodeFault 			= 0x6,
     DeviceNotAvailableFault 		= 0x7,
-    DoubleFaultAbort 				= 0x8,
+    DoubleFaultAbort 			= 0x8,
     InvalidTaskStateSegmentFault 	= 0x0A,
-    SegmentNotPresentFault 			= 0x0B,
-    StackFault 						= 0x0C,
-    GeneralProtectionFault 			= 0x0D,
-    PageFault 						= 0x0E,
+    SegmentNotPresentFault 		= 0x0B,
+    StackFault 				= 0x0C,
+    GeneralProtectionFault 		= 0x0D,
+    PageFault 				= 0x0E,
     FloatingPointErrorFault 		= 0x10,
-    AlignmentCheckFault 			= 0x11,
-    MachineCheckAbort 				= 0x12,
-    SimdFloatingPointFault 			= 0x13,
+    AlignmentCheckFault 		= 0x11,
+    MachineCheckAbort 			= 0x12,
+    SimdFloatingPointFault 		= 0x13,
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Copy, Clone)]
 pub enum WHvX64LocalApicEmulationMode
 {
-    None,
-    XApic,
+    ModeNone,
+    ModeXApic,
 }
 
 //
 // Return value for WHvCapabilityCodeX64MsrExits and input buffer for
 // WHvPartitionPropertyCodeX64MsrcExits
 //
+#[bitf(u64)]
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Copy, Clone)]
 pub struct WHvX64MSRExitBitmap
 {
-	UnhandledMsrs:	u8,
-	TscMsrWrite:	u8,
-	TscMsrRead:		u8,
-	Reserved:		[u8;61]
+	UnhandledMsrs_1:    (),
+	TscMsrWrite_1:	    (),
+	TscMsrRead_1:	    (),
+	Reserved_61:	    (),
 }
 
 //
 // WHvGetPartitionProperty output buffer / WHvSetPartitionProperty input buffer
 //
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Copy, Clone)]
 pub union WHvPartitionProperty
 {
-    ExtendedVmExits:			WHvExtendedVmExits,
-    ProcessorFeatures:			WHvProcessorFeatures,
+    ExtendedVmExits:		WHvExtendedVmExits,
+    ProcessorFeatures:		WHvProcessorFeatures,
     ProcessorXsaveFeatures: 	WHvProcessorXsaveFeatures,
-    ProcessorClFlushSize: 		u8,
-    ProcessorCount:				u32,
-    CpuidExitList: 				[u32;1],
-    CpuidResultList: 			[WHvX64CpuidResult;1],
-    ExceptionExitBitmap: 		u64,
+    ProcessorClFlushSize: 	u8,
+    ProcessorCount:		u32,
+    CpuidExitList: 		[u32;1],
+    CpuidResultList: 		[WHvX64CpuidResult;1],
+    ExceptionExitBitmap: 	u64,
     LocalApicEmulationMode: 	WHvX64LocalApicEmulationMode,
     SeparateSecurityDomain: 	bool,
-    NestedVirtualization: 		bool,
-    WHvX64MsrExitBitmap: 		WHvX64MSRExitBitmap,
-    ProcessorClockFrequency:	u64
-    InterruptClockFrequency:	u64
+    NestedVirtualization: 	bool,
+    WHvX64MsrExitBitmap: 	WHvX64MSRExitBitmap,
+    ProcessorClockFrequency:	u64,
+    InterruptClockFrequency:	u64,
 }
 
 #[repr(C)]
@@ -358,7 +328,7 @@ pub enum WHvProcessorCounterSet
 #[derive(Debug)]
 pub struct WHvProcessorRuntimeCounters
 {
-    TotalRuntime100ns: 		u64,
+    TotalRuntime100ns: 	    u64,
     HypervisorRuntime100ns: u64,
 }
 
@@ -366,7 +336,7 @@ pub struct WHvProcessorRuntimeCounters
 #[derive(Debug)]
 pub struct WHvProcessorInterceptCounter
 {
-    Count: 		u64,
+    Count: 	u64,
     Time100ns: 	u64,
 }
 
@@ -374,17 +344,17 @@ pub struct WHvProcessorInterceptCounter
 #[derive(Debug)]
 pub struct WHvProcessorInterceptCounters
 {
-     PageInvalidations: 		WHvProcessorInterceptCounter,
+     PageInvalidations: 	WHvProcessorInterceptCounter,
      ControlRegisterAccesses: 	WHvProcessorInterceptCounter,
-     IoInstructions: 			WHvProcessorInterceptCounter,
-     HaltInstructions: 			WHvProcessorInterceptCounter,
-     CpuidInstructions: 		WHvProcessorInterceptCounter,
-     MsrAccesses: 				WHvProcessorInterceptCounter,
-     OtherIntercepts: 			WHvProcessorInterceptCounter,
-     PendingInterrupts: 		WHvProcessorInterceptCounter,
-     EmulatedInstructions: 		WHvProcessorInterceptCounter,
+     IoInstructions: 		WHvProcessorInterceptCounter,
+     HaltInstructions: 		WHvProcessorInterceptCounter,
+     CpuidInstructions: 	WHvProcessorInterceptCounter,
+     MsrAccesses: 		WHvProcessorInterceptCounter,
+     OtherIntercepts: 		WHvProcessorInterceptCounter,
+     PendingInterrupts: 	WHvProcessorInterceptCounter,
+     EmulatedInstructions: 	WHvProcessorInterceptCounter,
      DebugRegisterAccesses: 	WHvProcessorInterceptCounter,
-     PageFaultIntercepts: 		WHvProcessorInterceptCounter,
+     PageFaultIntercepts: 	WHvProcessorInterceptCounter,
 }
 
 #[repr(C)]
@@ -397,19 +367,19 @@ pub struct WHvProcessorEventCounters
 }
 
 #[repr(C)]
-#[derive(Debug)y]
+#[derive(Debug)]
 pub struct WHvProcessorApicCounters
 {
     MmioAccessCount: 	u64,
     EoiAccessCount: 	u64,
     TprAccessCount: 	u64,
-    SentIpiCount: 		u64,
-    SelfIpiCount: 		u64,
+    SentIpiCount: 	u64,
+    SelfIpiCount: 	u64,
 }
 
 /*
  *
- * GetVirtualProcessorRegister definitions
+ * GetVirtualProcessorRegister data types definitions
  *
  */
 
@@ -417,7 +387,7 @@ pub struct WHvProcessorApicCounters
 // Virtual Processor Register Definitions
 //
 #[repr(C)]
-#[derive(Debug)y]
+#[derive(Debug)]
 pub enum WHvRegisterName
 {
     // X64 General purpose registers
@@ -576,223 +546,385 @@ pub enum WHvRegisterName
     PendingInterruption 		= 0x80000000,
     InterruptState      		= 0x80000001,
     PendingEvent        		= 0x80000002,
-    DeliverabilityNotifications = 0x80000004,
+    DeliverabilityNotifications         = 0x80000004,
     InternalActivityState 		= 0x80000005,
 
 }
 
-// TODO: use a u128 field ?
 #[repr(align(16))]
 #[repr(C)]
-#[derive(Debug)]
-pub struct u128
+#[derive(Debug, Copy, Clone)]
+pub struct WHvUint128
 {
-	Lo:	u64,
-    Hi:	u64,
+    pub val: u128,
 }
-// TODO: impl: Shl Shr BitAnd BitOrAssign BitAndAssign 
+
+trait LoHi<T>
+{
+    fn lo(self: &Self) -> T;
+    fn hi(self: &Self) -> T;
+}
+
+impl LoHi<u64> for WHvUint128
+{
+    fn lo(self: &Self) -> u64
+    {
+        let mask: u128 = u64::MAX as u128;
+        (self.val & mask) as u64 
+    }
+
+    fn hi(self: &Self) -> u64
+    {
+        let mask: u128 = (u64::MAX as u128) << 64;
+        ((self.val & mask) >> 64) as u64
+    }
+}
+
+#[bitf(u128)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64FPRegister
+{
+	Mantissa_64: 		(),
+	BiasedExponent_15:      (),
+	Sign_1: 		(),
+	_reserved_48:		(),
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union WHvX64FPControlStatusRegister
+{
+    FpControl:  u16,
+    FpStatus:   u16,
+    FpTag:      u8,
+    Reserved:   u8,
+    LastFpOp:   u16,
+    LastFpRip:  LastFpRipStruct,
+    AsUINT128:  WHvUint128,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union LastFpRipStruct
+{
+    LastFpRip:      u64,
+    LastFpRegister: LastFpRegisterStruct,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct LastFpRegisterStruct
+{
+    LaspFpEip:  u32,
+    LastFpCs:   u16,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union WHvX64XMMControlStatusRegister
+{
+    XmmControl: XmmStruct,
+    AsUINT128:  WHvUint128,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct XmmStruct
+{
+    LastFpRdp:              LastFpRdpStruct,
+    XmmStatusControl:       u32,
+    XmmStatusControlMask:   u32,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union LastFpRdpStruct
+{
+    LastFpRdp:  u64,
+    LastFp:     LastFpStruct,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct LastFpStruct
+{
+    LastFpDp:   u32,
+    LastFpDs:   u16,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64SegmentRegister
+{
+    Base:           u64,
+    Limit:          u32,
+    Selector:       u16,
+    Attributes:     WHvX64SegmentRegisterAttrs,
+}
+
+#[bitf(u16)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct WHvX64SegmentRegisterAttrs
+{
+    SegmentType_4:              (),
+    NonSystemSegment_1:         (),
+    DescriptorPrivilegeLevel_2: (),
+    Present_1:                  (),
+    _reserved_4:                (),
+    Available_1:                (),
+    Long_1:                     (),
+    Default_1:                  (),
+    Granularity_1:              (),
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64TableRegister
+{
+    Pad:    [u16;3],
+    Limit:  u16,
+    Base:   u64,
+}
+
+#[bitf(u64)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64InterrupStateRegister
+{
+    InterruptShadow_1:      (),
+    NmiMasked_1:            (),
+    _reserved_62:           (),
+}
+
+#[bitf(u64)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64PendingInterruptionRegister
+{
+    InterruptionPending_1:      u32,
+    InterruptionType_3:         u32,     // TODO: replace by a WHV_X64_PENDING_INTERRUPTION_TYPE return type
+    DeliverErrorCode_1:         u32,
+    InstructionLength_4:        u32,
+    NestedEvent_1:              u32,
+    _reserved_6:                u32,
+    InterruptionVector_16:      u32,
+    ErrorCode_32:               u32,
+}
+
+#[bitf(u64)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64DeliverabilityNotificationsRegister
+{
+    NmiNotification_1:          (),
+    InterruptNotification_1:    (),
+    InterruptPriority_4:        (),
+    _reserved_58:               (),
+}
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct WHvX64FPRegister
+pub enum WHvX64PendingEventType
 {
-	Mantissa, 		u64,
-	BiasedExponent:	[u64;15],
-	Sign: 			[u64;1],
-	Reserved:		[u64;48],
+    Exception   =   0,
+    ExtInt      =   5,
 }
+
+#[bitf(u128)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64PendingExceptionEvent
+{
+    EventPending_1:         u32,
+    EventType_3:            u32, //TODO: Should be WhvX64PendingEventException
+    _reserved0_4:           (),
+    DeliverErrorCode_1:     u32,
+    _reserved1_7:           (),
+    Vector_16:              u32,
+    ErrorCode_32:           u32,
+    ExceptionParameter_64:  u64,
+}
+
+#[bitf(u128)]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct WHvX64PendingExtIntEvent
+{
+    EventPending_1:     u64,
+    EventType_3:        u64,    //TODO: should be a WHvX64PendingEventExtInt
+    _reserved0_4:       u64,
+    Vector_8:           u64,
+    _reserved1_48:      u64,
+    _reserved2_64:      u64,
+}
+
+#[derive(Copy, Clone)]
+#[repr(C)]
+pub union WHvRegisterValue
+{
+    pub Reg128:                         WHvUint128,
+    pub Reg64:                          u64,
+    pub Reg32:                          u32,
+    pub Reg16:                          u16,
+    pub Reg8:                           u8,
+    pub Fp:                             WHvX64FPRegister,
+    pub FpControlStatus:                WHvX64FPControlStatusRegister,
+    pub XmmControlStatus:               WHvX64XMMControlStatusRegister,
+    pub Segment:                        WHvX64SegmentRegister,
+    pub Table:                          WHvX64TableRegister,
+    pub InterruptState:                 WHvX64InterrupStateRegister,
+    pub PendingInterruption:            WHvX64PendingInterruptionRegister,
+    pub DeliverabilityNotifications:    WHvX64DeliverabilityNotificationsRegister,
+    pub ExceptionEvent:                 WHvX64PendingExceptionEvent,
+    pub ExtIntEvent:                    WHvX64PendingExtIntEvent,
+}
+
 /*
-typedef union WHV_X64_FP_CONTROL_STATUS_REGISTER
+ * WHvMapGpaRange
+ */
+#[bitf(u32)]
+#[repr(C)]
+pub struct WHvMapGpaRangeFlags
 {
-    struct
-    {
-        UINT16 FpControl;
-        UINT16 FpStatus;
-        UINT8  FpTag;
-        UINT8  Reserved;
-        UINT16 LastFpOp;
-        union
-        {
-            // Long Mode
-            UINT64 LastFpRip;
+    RangeNone_1:        (),
+    Read_1:             (),
+    Write_1:            (),
+    Execute_1:          (),
+    TrackDirtyPages_1:  (),
+}
 
-            // 32 Bit Mode
-            struct
-            {
-                UINT32 LastFpEip;
-                UINT16 LastFpCs;
-            };
-        };
-    };
 
-    WHV_UINT128 AsUINT128;
-} WHV_X64_FP_CONTROL_STATUS_REGISTER;
-
-typedef union WHV_X64_XMM_CONTROL_STATUS_REGISTER
+/*
+ * WHvRequestInterrupt
+ */
+#[repr(C)]
+pub enum WHvInterruptType
 {
-    struct
-    {
-        union
-        {
-            // Long Mode
-            UINT64 LastFpRdp;
+    Fixed           = 0,
+    LowestPriority  = 1,
+    TypeNmi         = 4,
+    TypeInit        = 5,
+    TypeSipi        = 6,
+    TypeLocalInt1   = 9
+}
 
-            // 32 Bit Mode
-            struct
-            {
-                UINT32 LastFpDp;
-                UINT16 LastFpDs;
-            };
-        };
-        UINT32 XmmStatusControl;
-        UINT32 XmmStatusControlMask;
-    };
-
-    WHV_UINT128 AsUINT128;
-} WHV_X64_XMM_CONTROL_STATUS_REGISTER;
-
-typedef struct WHV_X64_SEGMENT_REGISTER
+#[repr(C)]
+pub enum WHvInterruptDestinationMode
 {
-    UINT64 Base;
-    UINT32 Limit;
-    UINT16 Selector;
+    Physical,
+    Logical,
+}
 
-    union
-    {
-        struct
-        {
-            UINT16 SegmentType:4;
-            UINT16 NonSystemSegment:1;
-            UINT16 DescriptorPrivilegeLevel:2;
-            UINT16 Present:1;
-            UINT16 Reserved:4;
-            UINT16 Available:1;
-            UINT16 Long:1;
-            UINT16 Default:1;
-            UINT16 Granularity:1;
-        };
-
-        UINT16 Attributes;
-    };
-} WHV_X64_SEGMENT_REGISTER;
-
-typedef struct WHV_X64_TABLE_REGISTER
+#[repr(C)]
+pub enum WHvInterruptTriggerMode
 {
-    UINT16     Pad[3];
-    UINT16     Limit;
-    UINT64     Base;
-} WHV_X64_TABLE_REGISTER;
+    Edge,
+    Level,
+}
 
-typedef union WHV_X64_INTERRUPT_STATE_REGISTER
+#[bitf(u128)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct WHvInterruptControl
 {
-    struct
-    {
-        UINT64 InterruptShadow:1;
-        UINT64 NmiMasked:1;
-        UINT64 Reserved:62;
-    };
+    Type_8:             u64,
+    DestinationMode_4:  u64,
+    TriggerMode_4:      u64,
+    _reserved_48:       (),
+    Destination_32:     u32,
+    Vector_32:          u32,
+}
 
-    UINT64 AsUINT64;
-} WHV_X64_INTERRUPT_STATE_REGISTER;
-
-typedef union WHV_X64_PENDING_INTERRUPTION_REGISTER
+/*
+ * WHvRunVirtualProcessor
+ */
+// Exit Reasons
+#[repr(C)]
+pub enum WHvRunVpExitReason
 {
-    struct
-    {
-        UINT32 InterruptionPending:1;
-        UINT32 InterruptionType:3;  // WHV_X64_PENDING_INTERRUPTION_TYPE
-        UINT32 DeliverErrorCode:1;
-        UINT32 InstructionLength:4;
-        UINT32 NestedEvent:1;
-        UINT32 Reserved:6;
-        UINT32 InterruptionVector:16;
-        UINT32 ErrorCode;
-    };
+    ReasonNone              = 0x00000000,
+    
+    // Standard exits caused by operations of the virtual processor
+    MemoryAccess            = 0x00000001,
+    X64IoPortAccess         = 0x00000002,
+    UnrecoverableException  = 0x00000004,
+    InvalidVpRegisterValue  = 0x00000005,
+    UnsupportedFeature      = 0x00000006,
+    X64InterruptWindow      = 0x00000007,
+    X64Halt                 = 0x00000008,
+    X64ApicEoi              = 0x00000009,
 
-    UINT64 AsUINT64;
-} WHV_X64_PENDING_INTERRUPTION_REGISTER;
+    // Additional exits that can be configured through partition properties
+    X64MsrAccess            = 0x00001000,
+    X64Cpuid                = 0x00001001,
+    Exception               = 0x00001002,
 
-C_ASSERT(sizeof(WHV_X64_PENDING_INTERRUPTION_REGISTER) == sizeof(UINT64));
+    // Exits caused by the host
+    Canceled                = 0x00002001,
+}
 
-typedef union WHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER
-{
-    struct
-    {
-        UINT64 NmiNotification:1;
-        UINT64 InterruptNotification:1;
-        UINT64 InterruptPriority:4;
-        UINT64 Reserved:58;
-    };
-
-    UINT64 AsUINT64;
-} WHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER;
-
-C_ASSERT(sizeof(WHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER) == sizeof(UINT64));
-
-
-typedef enum WHV_X64_PENDING_EVENT_TYPE
-{
-    WHvX64PendingEventException = 0,
-    WHvX64PendingEventExtInt    = 5,
-} WHV_X64_PENDING_EVENT_TYPE;
-
-typedef union WHV_X64_PENDING_EXCEPTION_EVENT
-{
-    struct
-    {
-        UINT32 EventPending         : 1;
-        UINT32 EventType            : 3; // Must be WHvX64PendingEventException
-        UINT32 Reserved0            : 4;
-
-        UINT32 DeliverErrorCode     : 1;
-        UINT32 Reserved1            : 7;
-        UINT32 Vector               : 16;
-        UINT32 ErrorCode;
-        UINT64 ExceptionParameter;
-    };
-
-    WHV_UINT128 AsUINT128;
-} WHV_X64_PENDING_EXCEPTION_EVENT;
-
-C_ASSERT(sizeof(WHV_X64_PENDING_EXCEPTION_EVENT) == sizeof(WHV_UINT128));
-
-typedef union WHV_X64_PENDING_EXT_INT_EVENT
-{
-    struct
-    {
-        UINT64 EventPending     : 1;
-        UINT64 EventType        : 3; // Must be WHvX64PendingEventExtInt
-        UINT64 Reserved0        : 4;
-        UINT64 Vector           : 8;
-        UINT64 Reserved1        : 48;
-
-        UINT64 Reserved2;
-    };
-
-    WHV_UINT128 AsUINT128;
-} WHV_X64_PENDING_EXT_INT_EVENT;
-
-C_ASSERT(sizeof(WHV_X64_PENDING_EXT_INT_EVENT) == sizeof(WHV_UINT128));
 
 //
-// Register values
+// Execution state of the virtual processor
 //
-typedef union WHV_REGISTER_VALUE
+#[bitf(u16)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct WHvX64VpExecutionState
 {
-    WHV_UINT128 Reg128;
-    UINT64 Reg64;
-    UINT32 Reg32;
-    UINT16 Reg16;
-    UINT8 Reg8;
-    WHV_X64_FP_REGISTER Fp;
-    WHV_X64_FP_CONTROL_STATUS_REGISTER FpControlStatus;
-    WHV_X64_XMM_CONTROL_STATUS_REGISTER XmmControlStatus;
-    WHV_X64_SEGMENT_REGISTER Segment;
-    WHV_X64_TABLE_REGISTER Table;
-    WHV_X64_INTERRUPT_STATE_REGISTER InterruptState;
-    WHV_X64_PENDING_INTERRUPTION_REGISTER PendingInterruption;
-    WHV_X64_DELIVERABILITY_NOTIFICATIONS_REGISTER DeliverabilityNotifications;
-    WHV_X64_PENDING_EXCEPTION_EVENT ExceptionEvent;
-    WHV_X64_PENDING_EXT_INT_EVENT ExtIntEvent;
-} WHV_REGISTER_VALUE;
+    Cpl_2:                  (),
+    Cr0Pe_1:                (),
+    Cr0Am_1:                (),
+    EferLma_1:              (),
+    DebugActive_1:          (),
+    InterruptionPending_1:  (),
+    _reserved0_5:           (),
+    InterruptShadow_1:      (),
+    _reserved1_3:           (),
+}
+
+//
+// Execution context of a virtual processor at the time of an exit
+//
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct WHvVpExitContext
+{
+    ExecutionState: WHvX64VpExecutionState,
+    InstLenCr8:     InstructionLenCr8,
+    Reserved:       u8,
+    Reserved2:      u32,
+    Cs:             WHvX64SegmentRegister,
+    Rip:            u64,
+    RFlags:         u64,
+}
+
+// included in WHvVpExitContext
+#[bitf(u8)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct InstructionLenCr8
+{
+    InstructionLength_4:    (),
+    Cr8_4:                  (),
+}
+
+/*
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct WHVRunVPExitContext
+{
+    ExitReason:     WHvRunVPExitReason,
+    Reserved:       u32,
+    VpContext:      WHvVPExitContext,
+
+}
 */
+
+
+
+
+
+
