@@ -1,5 +1,7 @@
 use crate::hv_defs::*;
 
+// TODO: verify the types of the ...BufferSizeInBytes variables
+
 extern "system"
 {
     fn WHvCancelRunVirtualProcessor(Partition: PHandle,
@@ -77,8 +79,41 @@ extern "system"
 
     fn WHvResumePartitionTime(Partition: PHandle) -> HResult;
 
+    fn WHvSetPartitionProperty(Partition: PHandle,
+                               PropertyCode: WHvPartitionPropertyCode,
+                               PropertyBuffer: *mut usize,
+                               PropertyBufferSizeInBytes: usize) -> HResult;
+   
+    fn WHvSetupPartition(Partition: PHandle) -> HResult;
+
+    fn WHvSetVirtualProcessorInterruptControllerState(Partition: PHandle,
+                                                      VpIndex: u32,
+                                                      State: *mut usize,
+                                                      StateSize: u32) -> HResult;
+
+    fn WHvSetVirtualProcessorRegisters(Partition: PHandle,
+                                       VpIndex: u32,
+                                       RegisterNames: *const usize,
+                                       RegisterCount: u32,
+                                       RegisterValues: *const usize) -> HResult;
+
+    fn WHvSetVirtualProcessorXsaveState(Partition: PHandle,
+                                        VpIndex: u32,
+                                        Buffer: *const usize,
+                                        BufferSizeInBytes: u32) -> HResult;
     
+    fn WHvSuspendPartitionTime(Partition: PHandle) -> HResult;
+
+    fn WHvTranslateGva(Partition: PHandle,
+                       VpIndex: u32,
+                       Gva: WHvGuestVirtualAddress,
+                       TranslateFlags: WHvTranslateGVAFlags,
+                       TranslationResult: *mut WHvTranslateGVAResult,
+                       Gpa: *mut WHvGuestPhysicalAddress) -> HResult;
     
+    fn WHvUnmapGpaRange(Partition: PHandle,
+                        GuestAddress: WHvGuestPhysicalAddress,
+                        SizeInBytes: u64) -> HResult;
 
 }
 
