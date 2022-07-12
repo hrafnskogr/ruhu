@@ -7,12 +7,11 @@
 
 #![allow(non_snake_case)]
 
-
+use std::mem;
 use bitf::bitf;
 
 
 pub type PHandle = usize;
-pub type HResult = u32;     // maybe should be an i32 ?
 
 pub type WHvGuestPhysicalAddress = u64;
 pub type WHvGuestVirtualAddress = u64;
@@ -28,7 +27,7 @@ pub enum WHvCapabilityCode
 
     // Capabilities of the system's processor
     ProcessorVendor         = 0x00001000,
-    ProcessorFeature        = 0x00001001,
+    ProcessorFeatures       = 0x00001001,
     ProcessorClFlushSize    = 0x00001002,
     ProcessorXsaveFeatures  = 0x00001003,
 }
@@ -71,7 +70,7 @@ pub struct WHvExtendedVmExits
 {
     X64CpuidExit_1:   (),			// RunVpExitReasonX64CPUID supported
     X64MSRExit_1:     (),			// RunVpExitX64ReasonMSRAccess supported
-    X64RdtscExit_1:   (),			// WHvRunVpExitReasonX64Rdtsc supported
+    ExceptionExit_1:   (),			// RunVpExitReasonException supported
     _reserved_61:     (),
 }
 
@@ -189,6 +188,14 @@ pub union WHvCapability
 	
 }
 
+impl Default for WHvCapability
+{
+    fn default() -> WHvCapability
+    {
+        unsafe { mem::zeroed() }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub enum WHvPartitionCounterSet
@@ -300,20 +307,28 @@ pub struct WHvX64MSRExitBitmap
 #[derive(Copy, Clone)]
 pub union WHvPartitionProperty
 {
-    ExtendedVmExits:		WHvExtendedVmExits,
-    ProcessorFeatures:		WHvProcessorFeatures,
-    ProcessorXsaveFeatures: 	WHvProcessorXsaveFeatures,
-    ProcessorClFlushSize: 	u8,
-    ProcessorCount:		u32,
-    CpuidExitList: 		[u32;1],
-    CpuidResultList: 		[WHvX64CpuidResult;1],
-    ExceptionExitBitmap: 	u64,
-    LocalApicEmulationMode: 	WHvX64LocalApicEmulationMode,
-    SeparateSecurityDomain: 	bool,
-    NestedVirtualization: 	bool,
-    WHvX64MsrExitBitmap: 	WHvX64MSRExitBitmap,
-    ProcessorClockFrequency:	u64,
-    InterruptClockFrequency:	u64,
+    pub ExtendedVmExits:		WHvExtendedVmExits,
+    pub ProcessorFeatures:		WHvProcessorFeatures,
+    pub ProcessorXsaveFeatures: 	WHvProcessorXsaveFeatures,
+    pub ProcessorClFlushSize: 	        u8,
+    pub ProcessorCount:		        u32,
+    pub CpuidExitList: 		        [u32;1],
+    pub CpuidResultList: 		[WHvX64CpuidResult;1],
+    pub ExceptionExitBitmap: 	        u64,
+    pub LocalApicEmulationMode: 	WHvX64LocalApicEmulationMode,
+    pub SeparateSecurityDomain: 	bool,
+    pub NestedVirtualization: 	        bool,
+    pub WHvX64MsrExitBitmap: 	        WHvX64MSRExitBitmap,
+    pub ProcessorClockFrequency:	u64,
+    pub InterruptClockFrequency:	u64,
+}
+
+impl Default for WHvPartitionProperty
+{
+    fn default() -> WHvPartitionProperty
+    {
+        unsafe { mem::zeroed() }
+    }
 }
 
 #[repr(C)]

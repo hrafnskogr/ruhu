@@ -1,7 +1,9 @@
 use crate::hv_defs::*;
+use crate::win_api::*;
 
 // TODO: verify the types of the ...BufferSizeInBytes variables
 
+#[link(name="WinHvPlatform")]
 extern "system"
 {
     fn WHvCancelRunVirtualProcessor(Partition: PHandle,
@@ -63,12 +65,12 @@ extern "system"
 
     fn WHvMapGpaRange(Partition: PHandle,
                       SourceAddress:    *const usize,
-                      GuestAddress:     WHvGuestPhysicialAddress,
+                      GuestAddress:     WHvGuestPhysicalAddress,
                       SizeInBytes:      u64,
                       Flags:            WHvMapGpaRangeFlags) -> HResult;
 
     fn WHvQueryGpaRangeDirtyBitmap(Partition: PHandle,
-                                   GuestAddress: WHvGuestPhysicialAddress,
+                                   GuestAddress: WHvGuestPhysicalAddress,
                                    RangeSizeInBytes: u64,
                                    Bitmap: *mut u64,
                                    BitmapSizeInBytes: u32) -> HResult;
@@ -81,7 +83,7 @@ extern "system"
 
     fn WHvSetPartitionProperty(Partition: PHandle,
                                PropertyCode: WHvPartitionPropertyCode,
-                               PropertyBuffer: *mut usize,
+                               PropertyBuffer: *mut WHvPartitionProperty,
                                PropertyBufferSizeInBytes: usize) -> HResult;
    
     fn WHvSetupPartition(Partition: PHandle) -> HResult;
@@ -117,3 +119,38 @@ extern "system"
 
 }
 
+pub fn is_hypervisor_present() -> bool
+{
+    unsafe
+    {
+        let buffer_ptr: *mut WHvCapability = Box::into_raw(Box::new(WHvCapability::default())) as *mut WHvCapability;
+        let buffer_size: u32 = std::mem::size_of::<WHvCapability>() as u32;
+        let wrt_ptr: *mut u32 = Box::into_raw(Box::new(0)) as *mut u32;
+
+        let res = WHvGetCapability(WHvCapabilityCode::HypervisorPresent, 
+                                   buffer_ptr, 
+                                   buffer_size, 
+                                   wrt_ptr);
+       
+        (*buffer_ptr).HypervisorPresent
+    }
+}
+
+pub fn create_partition() -> PHandle
+{
+    unsafe
+    {
+        let phandle: *mut PHandle = Box::into_raw(Box::new(0usize)) as *mut PHandle;
+        let res = WHvCreatePartition(phandle);
+
+        *phandle
+    }
+}
+
+pub fn set_partition_property(partition: PHandle, property_code: WHvPartitionPropertyCode, property_buffer: *mut WHvPartitionProperty) -> HResult
+{
+    unsafe
+    {
+        WHvSetPartitionProperty(partition, property_code, property_buffer, std::mem::size_of::<WHvPartitionProperty>())
+    }
+}

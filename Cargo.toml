@@ -9,3 +9,11 @@ edition = "2021"
 [dependencies]
 bitf = ">=1.0"
 
+[lib]
+name = "ruhu"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ruhu_tester"
+path = "bin/main.rs"
+
